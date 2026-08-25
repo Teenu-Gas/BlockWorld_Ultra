@@ -1,0 +1,58 @@
+name: Build Block World Ultra APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: unzip BlockWorldUltra-cloud-build.zip
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: blockworld-ultra
+        run: npm install
+
+      - name: Build web assets
+        working-directory: blockworld-ultra
+        run: npm run build
+
+      - name: Generate Android project
+        working-directory: blockworld-ultra
+        run: npx cap add android
+
+      - name: Sync Android project
+        working-directory: blockworld-ultra
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: blockworld-ultra/android
+        run: ./gradlew assembleDebug
+
+      - name: Rename APK
+        run: cp blockworld-ultra/android/app/build/outputs/apk/debug/app-debug.apk BlockWorldUltra.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlockWorldUltra.apk
+          path: BlockWorldUltra.apk
